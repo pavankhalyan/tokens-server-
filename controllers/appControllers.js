@@ -1,4 +1,5 @@
 import UserModel from "../model/User.model.js"
+import bcrypt from "bcrypt";
 
 
 export async function register(req,res) {
@@ -22,7 +23,29 @@ export async function register(req,res) {
                 resolve();
             })
         });
-       
+
+        Promise.all([existUsername,existEmail])
+          .then(() => {
+                  if(password) {
+                     bcrypt.hash(password, 10 )
+                       .then (hashedPassword => {
+                        const user = new UserModel({
+                            username, 
+                            password : hashedPassword,
+                            profile : profile,
+                            email
+                        });
+
+                        user.save()
+                        .then(result => res.status(201).send({msg : " user registered sucessfully "}))
+                        .catch(error => res.status(500).send({error}))
+                       } )
+                  }
+          }).catch(error => {
+            return res.status(500).send({
+                error : "enable to hashed password"
+            })
+          })
     
      }catch(error) {
         return res.status(500).send(error);
