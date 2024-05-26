@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import Password from "../../client/src/components/Password";
 
 export const Userschema = new mongoose.Schema({
     username : {
