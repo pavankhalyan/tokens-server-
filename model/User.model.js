@@ -6,7 +6,7 @@ export const Userschema = new mongoose.Schema({
         required : [true, "please provide unique username"],
         unique : [true, "username exist"]
     },
-    Password : {
+    password : {
         type : String,
         required : [true, "please provide a password"],
         unique : false,

@@ -1,54 +1,35 @@
 import UserModel from "../model/User.model.js"
 import bcrypt from "bcrypt";
-import { jwt } from 'jsonwebtoken'
+import  jwt  from "jsonwebtoken";
+import ENV from '../config.js'
 
 
 export async function register(req,res) {
      try {
         const { username , password , email, profile } = req.body;
 
-        const existUsername = new promise ((resolve, reject) => {
-            UserModel.findOne({username}, function (err,user) {
-                if(err) reject (new Error(err))
-                if(user) reject ({error : "please provide a unique username"});
+        const existUsername = await  UserModel.findOne({username})
 
-                resolve();
-            })
-        });
+        const existEmail = await UserModel.findOne({email})
 
-        const existEmail = new promise ((resolve, reject) => {
-            UserModel.findOne({email}, function (err,email) {
-                if(err) reject (new Error(err))
-                if(email) reject ({error : "please provide a unique email"});
+       if(existUsername) return res.status(400).send({error : "username already exist"})
+        if(password) {
+            let hashedPassword = await bcrypt.hash(password, 10 )
+            console.log(hashedPassword)
+            const user = new UserModel({
+                username, 
+                password : hashedPassword,
+                profile : profile,
+                email
+            });
 
-                resolve();
-            })
-        });
-
-        Promise.all([existUsername,existEmail])
-          .then(() => {
-                  if(password) {
-                     bcrypt.hash(password, 10 )
-                       .then (hashedPassword => {
-                        const user = new UserModel({
-                            username, 
-                            password : hashedPassword,
-                            profile : profile,
-                            email
-                        });
-
-                        user.save()
-                        .then(result => res.status(201).send({msg : " user registered sucessfully "}))
-                        .catch(error => res.status(500).send({error}))
-                       } )
-                  }
-          }).catch(error => {
-            return res.status(500).send({
-                error : "enable to hashed password"
-            })
-          })
-    
+            await user.save()
+            res.json(user)
+            return
+        }
+        res.json("👎")
      }catch(error) {
+        console.log(error.message)
         return res.status(500).send(error);
      }
 }
@@ -68,7 +49,7 @@ export async function login(req,res) {
                 const token =jwt.sign({
                     userId: user._id,
                     username : user.username 
-                },'secret',{expiresIn : "24h"});
+                },ENV.JWT_SECRET,{expiresIn : "24h"});
 
                 return res.token(200).send({
                     msg :"login sucessfully..!",
